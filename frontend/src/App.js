@@ -643,7 +643,7 @@ function App() {
               />
             ) : (
               <FarmerRegistration 
-                onRegistered={setFarmer} 
+                onRegistered={handleFarmerRegistered} 
                 language={language} 
                 setLanguage={setLanguage}
               />
