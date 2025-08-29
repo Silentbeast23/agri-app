@@ -446,7 +446,23 @@ const FarmerDashboard = ({ farmer, language, setLanguage }) => {
   const fetchDashboardData = async () => {
     try {
       const response = await axios.get(`${API}/dashboard/${farmer.id}`);
-      setDashboardData(response.data);
+      const data = response.data;
+      
+      // If no recommendations exist, generate them automatically
+      if (!data.recommendations || data.recommendations.length === 0) {
+        try {
+          console.log('Generating crop recommendations for farmer...');
+          await axios.post(`${API}/crops/recommend/${farmer.id}`);
+          // Fetch dashboard data again after generating recommendations
+          const updatedResponse = await axios.get(`${API}/dashboard/${farmer.id}`);
+          setDashboardData(updatedResponse.data);
+        } catch (recError) {
+          console.error('Failed to generate recommendations:', recError);
+          setDashboardData(data); // Use original data even without recommendations
+        }
+      } else {
+        setDashboardData(data);
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
