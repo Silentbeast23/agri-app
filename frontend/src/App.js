@@ -575,6 +575,60 @@ const FarmerDashboard = ({ farmer, language, setLanguage }) => {
 function App() {
   const [farmer, setFarmer] = useState(null);
   const [language, setLanguage] = useState('hindi');
+  const [loading, setLoading] = useState(true);
+
+  // Check for existing farmer in localStorage or get latest registered farmer
+  useEffect(() => {
+    const checkExistingFarmer = async () => {
+      // Check localStorage first
+      const storedFarmer = localStorage.getItem('agrisense_farmer');
+      if (storedFarmer) {
+        try {
+          const parsedFarmer = JSON.parse(storedFarmer);
+          setFarmer(parsedFarmer);
+          setLoading(false);
+          return;
+        } catch (error) {
+          localStorage.removeItem('agrisense_farmer');
+        }
+      }
+
+      // If no stored farmer, check if any farmers exist in database
+      try {
+        const response = await axios.get(`${API}/farmers`);
+        if (response.data && response.data.length > 0) {
+          // Use the most recently created farmer
+          const latestFarmer = response.data.sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+          )[0];
+          setFarmer(latestFarmer);
+          localStorage.setItem('agrisense_farmer', JSON.stringify(latestFarmer));
+        }
+      } catch (error) {
+        console.log('No existing farmers found, showing registration');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkExistingFarmer();
+  }, []);
+
+  const handleFarmerRegistered = (newFarmer) => {
+    setFarmer(newFarmer);
+    localStorage.setItem('agrisense_farmer', JSON.stringify(newFarmer));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-xl text-green-800">🌾 Loading AgriSense Quantum...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
